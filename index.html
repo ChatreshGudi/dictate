@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictate</title>
+    <style>
+        :root{
+            --blue: #006eff;
+        }
+
+        body{
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            /* align-items: center; */
+        }
+
+        input{
+            outline: none;
+            border: 1px solid var(--blue);
+            border-radius: 15px;
+            padding: 10px;
+            color:var(--blue);
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.25);
+        }
+
+        input:hover{
+            box-shadow: 0px 0px 20px rgba(0,0,0,0.25);
+        }
+
+        button{
+            padding: 10px;
+            border: 1px solid var(--blue);
+            border-radius: 15px;
+            background-color: white;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.25);
+            color: var(--blue);
+        }
+
+        button:hover{
+            background-color: var(--blue);
+            color: white;
+            box-shadow: 0px 0px 20px rgba(0,0,0,0.25);
+        }
+        
+        textarea{
+            border-radius: 15px;
+            border: 1px solid var(--blue);
+            padding: 10px;
+            outline: none;
+            width: 90%;
+        }
+
+        div#options{
+            display: flex ;
+        }
+
+    </style>
+</head>
+<body>
+    <div>
+        <textarea id = "text"></textarea>
+    </div>
+    <div id = "options">
+        <input id = "volume" type="number" placeholder="volume" value = 1 min = 0 max = 1/>
+        <input id = "rate" type="number" placeholder="rate" value = 1 min = 0 max = 1/>
+    </div>
+    <button onclick="dictate()">Dictate</button>
+    <script>
+        function dictate(){
+            const text = document.getElementById("text").value;
+            const volume = document.getElementById("volume").value;
+            const rate = document.getElementById("rate").value;
+            const words = breakdown(text);
+            console.log(words);
+            const speak = new SpeechSynthesisUtterance("Dictating, ");
+            speechSynthesis.speak(speak);
+            myLoop(words, rate, volume);
+        }
+
+        var i = 0;                  //  set your counter to 1
+
+        function myLoop(words, rate, volume) {         //  create a loop function
+            setTimeout(function() {   //  call a 3s setTimeout when the loop is called
+                let speech = new SpeechSynthesisUtterance();
+                    speech.text = words[i];
+                    speech.lang = 'en-uk';
+                    speech.rate = rate;
+                    speech.volume = volume;
+                    speechSynthesis.speak(speech);  //  your code here
+                i++;                    //  increment the counter
+                if (i < words.length) {           //  if the counter < 10, call the loop function
+                    console.log('Running');
+                    myLoop(words, rate, volume);             //  ..  again which will trigger another 
+                }                       //  ..  setTimeout()
+            }, words[i].length*1000);
+        }
+
+        function breakdown(text){
+            let wordstart = true;
+            let word = '';
+            let words = [];
+            let symbols = {'!':'Exclamatory Mark', '.':'Fullstop', ',':'comma', '?':'question mark', ':':'colon', ';':'semicolon', "'":'single quotation mark', '"':'double quotation mark', '(':'Open paranthesis', ')':'Closing paranthesis', '{': 'Opening curly braces', '}':'Closing curly braces', '[':'Opening square bracket', ']':'Closing square bracket'};
+            for (let i = 0; i<text.length; i++){
+                // console.log(text.charAt(i));
+                if (text.charAt(i) == ' '){
+                    if (word == ''){
+                        // console.log('Start of a word!');
+                        wordstart = true;
+                    }
+                    else if (word != ''){
+                        words.push(word);
+                        console.log('End of a word!', word);
+                        word = '';
+                        wordstart = false;
+                    }
+                }
+                else if(text.charAt(i) in symbols){
+                    words.push(word);
+                    word = '';
+
+                    console.log('Found a symbol!', symbols[text.charAt(i)]);
+                    words.push(symbols[text.charAt(i)]);
+                }
+                else if (i == text.length -1){
+                    word += text.charAt(i);
+                    words.push(word);
+                    word = '';
+                    wordstart = false;
+                }
+                else{
+                    // console.log('Writing a word');
+                    word += text.charAt(i);
+                }
+            }
+            return words;
+        }
+    </script>
+</body>
+</html>
