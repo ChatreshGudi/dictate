@@ -10,12 +10,16 @@
             --blue: #006eff;
         }
 
+        *{
+            box-sizing: border-box;
+        }
+
         body{
             margin: 0;
             padding: 10px;
             display: flex;
             flex-direction: column;
-            /* align-items: center; */
+            gap: 20px;
         }
 
         input{
@@ -23,26 +27,29 @@
             border: 1px solid var(--blue);
             border-radius: 15px;
             padding: 10px;
-            color:var(--blue);
+            background-color: var(--blue);
+            color:white;
             box-shadow: 0px 0px 10px rgba(0,0,0,0.25);
         }
 
         input:hover{
             box-shadow: 0px 0px 20px rgba(0,0,0,0.25);
+            color: var(--blue);
+            background-color: white;
         }
 
         button{
             padding: 10px;
             border: 1px solid var(--blue);
             border-radius: 15px;
-            background-color: white;
+            background-color: var(--blue);
             box-shadow: 0px 0px 10px rgba(0,0,0,0.25);
-            color: var(--blue);
+            color: white;
         }
 
         button:hover{
-            background-color: var(--blue);
-            color: white;
+            background-color: white;
+            color: var(--blue);
             box-shadow: 0px 0px 20px rgba(0,0,0,0.25);
         }
         
@@ -51,59 +58,93 @@
             border: 1px solid var(--blue);
             padding: 10px;
             outline: none;
-            width: 90%;
+            width: 100%;
+            resize: none;
+            height: 90%;
+            color: var(--blue);
         }
 
-        div#options{
+        div.options{
             display: flex ;
+            gap: 20px;
         }
 
+        label{
+            color: var(--blue);
+        }
     </style>
 </head>
 <body>
     <div>
-        <textarea id = "text"></textarea>
+        <textarea id = "text">This website can be used to dictate text.</textarea>
     </div>
-    <div id = "options">
-        <input id = "volume" type="number" placeholder="volume" value = 1 min = 0 max = 1/>
-        <input id = "rate" type="number" placeholder="rate" value = 1 min = 0 max = 1/>
+    <div class = "options">
+        <label>
+            Volume: 
+            <input id = "volume" type="number" placeholder="volume" value = 1 min = 0 max = 1 step="0.1"/>
+        </label>
+        <label>
+            Speech Rate: 
+            <input id = "rate" type="number" placeholder="rate" value = 0.1 min = 0 max = 1 step = "0.1"/>
+        </label>
     </div>
-    <button onclick="dictate()">Dictate</button>
+    <div class = "options">
+        <button onclick="dictate()">Dictate</button>
+        <!-- <button onclick="speechSynthesis.pause()">Pause</button>
+        <button onclick="speechSynthesis.resume()">Play</button> -->
+    </div>
     <script>
+        let symbols = {'!':'Exclamatory Mark', '.':'Fullstop', ',':'comma', '?':'question mark', ':':'colon', ';':'semicolon', "'":'single quotation mark', '"':'double quotation mark', '(':'Open paranthesis', ')':'Closing paranthesis', '{': 'Opening curly braces', '}':'Closing curly braces', '[':'Opening square bracket', ']':'Closing square bracket'};
         function dictate(){
+            console.log('Dictating');
             const text = document.getElementById("text").value;
             const volume = document.getElementById("volume").value;
             const rate = document.getElementById("rate").value;
-            const words = breakdown(text);
+            var words = breakdown(text);
+            words.push("Done.");
             console.log(words);
-            const speak = new SpeechSynthesisUtterance("Dictating, ");
+            var speak = new SpeechSynthesisUtterance("Dictating, ");
             speechSynthesis.speak(speak);
+            console.log('Done ditating');
             myLoop(words, rate, volume);
         }
 
-        var i = 0;                  //  set your counter to 1
-
-        function myLoop(words, rate, volume) {         //  create a loop function
-            setTimeout(function() {   //  call a 3s setTimeout when the loop is called
-                let speech = new SpeechSynthesisUtterance();
-                    speech.text = words[i];
-                    speech.lang = 'en-uk';
-                    speech.rate = rate;
-                    speech.volume = volume;
-                    speechSynthesis.speak(speech);  //  your code here
-                i++;                    //  increment the counter
-                if (i < words.length) {           //  if the counter < 10, call the loop function
-                    console.log('Running');
-                    myLoop(words, rate, volume);             //  ..  again which will trigger another 
-                }                       //  ..  setTimeout()
-            }, words[i].length*1000);
+        var i = 0;            
+        let delay = 0;
+        function myLoop(words, rate, volume) {
+            return new Promise(
+                function (resolve, reject){
+                    setTimeout(function() {
+                        if (i == 0){
+                            delay = 0;
+                        }
+                        else if ( words[i] in Object.values(symbols) ){
+                            delay = 1000;
+                        }
+                        else{
+                            delay = words[i-1].length*1000;
+                            console.log(i, words[i-1], delay);
+                        }
+                        let speech = new SpeechSynthesisUtterance();
+                        speech.text = words[i];
+                        speech.lang = 'en-uk';
+                        speech.rate = rate;
+                        speech.volume = volume;
+                        speechSynthesis.speak(speech); 
+                        i++;                  
+                        if (i < words.length) {           //  if the counter < 10, call the loop function
+                            myLoop(words, rate, volume);             //  ..  again which will trigger another 
+                        }                       //  ..  setTimeout()
+                    }, delay)
+                }
+            );
         }
 
         function breakdown(text){
             let wordstart = true;
             let word = '';
             let words = [];
-            let symbols = {'!':'Exclamatory Mark', '.':'Fullstop', ',':'comma', '?':'question mark', ':':'colon', ';':'semicolon', "'":'single quotation mark', '"':'double quotation mark', '(':'Open paranthesis', ')':'Closing paranthesis', '{': 'Opening curly braces', '}':'Closing curly braces', '[':'Opening square bracket', ']':'Closing square bracket'};
+            
             for (let i = 0; i<text.length; i++){
                 // console.log(text.charAt(i));
                 if (text.charAt(i) == ' '){
